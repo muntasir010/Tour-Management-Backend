@@ -2,7 +2,7 @@
 import { Server } from "http";
 import mongoose from "mongoose";
 import app from "./app";
-import { enVars } from "./app/modules/config/env";
+import { enVars } from "./app/config/env";
 let server: Server;
 
 const startServer = async () => {
