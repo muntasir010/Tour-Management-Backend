@@ -1,3 +1,4 @@
+import bcryptjs from 'bcryptjs';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import passport from "passport";
 import {
@@ -8,6 +9,42 @@ import {
 import { enVars } from "./env";
 import { User } from "../modules/user/user.model";
 import { Role } from "../modules/user/user.interface";
+import { Strategy as LocalStrategy } from "passport-local";
+
+passport.use(
+  new LocalStrategy(
+    {
+     usernameField : "email",
+      passwordField: "password",
+    },
+    async (email: string, password: string, done) => {
+      try {
+        const isUserExist = await User.findOne({ email });
+        // if (!isUserExist) {
+        //   return done(null, false, { message: "User Does Not Exist" });
+        // }
+
+        if(!isUserExist){
+          return done("User Does Not Exist")
+        }
+        const isGoogleAuthenticated = isUserExist.auth.some(providerObjects => providerObjects.provider=="google");
+        // if(isGoogleAuthenticated){
+        //   return done(null, false, {message: "You have authenticated through Google. So if you want to login Credentials, then at first login with google and set a password for your Gmail and then you can login with email and password."})
+        // }
+        if(isGoogleAuthenticated && !isUserExist.password){
+          return done("You have authenticated through Google. So if you want to login Credentials, then at first login with google and set a password for your Gmail and then you can login with email and password.")
+        }
+        const isPasswordMatched = await bcryptjs.compare(password as string, isUserExist.password as string);
+        if(!isPasswordMatched){
+          return done(null, false, {message: "Password does not matched"})
+        }
+        return done(null, isUserExist)
+      } catch (error) {
+        done(error);
+      }
+    }
+  )
+);
 
 passport.use(
   new GoogleStrategy(
@@ -51,7 +88,6 @@ passport.use(
     }
   )
 );
-
 
 passport.serializeUser((user: any, done: (err: any, id?: unknown) => void) => {
   done(null, user._id);
