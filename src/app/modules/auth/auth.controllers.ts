@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextFunction, Request, Response } from "express";
 import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
@@ -8,20 +9,45 @@ import { setAuthCookie } from "../../utils/authTokens";
 import { createUserToken } from "../../utils/userTokens";
 import { enVars } from "../../config/env";
 import { JwtPayload } from "jsonwebtoken";
+import passport from "passport";
 
 const credentialLogin = catchAsync(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async (req: Request, res: Response, next: NextFunction) => {
-    const loginInfo = await AuthService.credentialLogin(req.body);
+    // const loginInfo = await AuthService.credentialLogin(req.body);
+    passport.authenticate("local", async (err: any, user: any, info: any) => {
+      if (err) {
+        // ❌❌❌
+        // throw new AppError(401, "Some Error");
+        // next(err);
+        // return new AppError(401, err);
 
-    setAuthCookie(res, loginInfo);
+        // ✅✅✅
+        // return next(err);
+        return next(new AppError(401, err))
+      }
+      if (!user) {
+        return next(new AppError(401, info.message))
+      }
 
-    sendResponse(res, {
-      success: true,
-      statusCode: httpStatus.OK,
-      message: "User Logged In Successfully",
-      data: loginInfo,
-    });
+      const userToken = await createUserToken(user);
+      // delete user.toObject().password
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: pass, ...rest } = user.toObject();
+
+      setAuthCookie(res, userToken);
+
+      sendResponse(res, {
+        success: true,
+        statusCode: httpStatus.OK,
+        message: "User Logged In Successfully",
+        data: {
+          accessToken: userToken.accessToken,
+          refreshToken: userToken.refreshToken,
+          user: rest,
+        },
+      });
+    })(req, res, next);
   }
 );
 
@@ -48,6 +74,7 @@ const getNewAccessToken = catchAsync(
     });
   }
 );
+
 const logout = catchAsync(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async (req: Request, res: Response, next: NextFunction) => {
@@ -70,6 +97,7 @@ const logout = catchAsync(
     });
   }
 );
+
 const resetPassword = catchAsync(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async (req: Request, res: Response, next: NextFunction) => {
@@ -90,6 +118,7 @@ const resetPassword = catchAsync(
     });
   }
 );
+
 const googleCallbackController = catchAsync(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async (req: Request, res: Response, next: NextFunction) => {
