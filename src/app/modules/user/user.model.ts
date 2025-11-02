@@ -1,8 +1,8 @@
 import { model, Schema } from "mongoose";
-import { IAuthProviders, IsActive, IUser, Role } from "./user.interface";
+import { IAuthProvider, IsActive, IUser, Role } from "./user.interface";
 
 
-const authProviderSchema = new Schema<IAuthProviders>({
+const authProviderSchema = new Schema<IAuthProvider>({
     provider: {type: String, required: true},
     providerId: {type: String, required: true}
 },{
@@ -32,7 +32,7 @@ const userSchema = new Schema<IUser>({
     enum: Object.values(Role),
     default: Role.USER
   },
-  auth: [authProviderSchema],
+  auths: [authProviderSchema],
   bookings: {},
   guides: {},
 },{
