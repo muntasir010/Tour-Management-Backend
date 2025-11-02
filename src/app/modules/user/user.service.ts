@@ -4,9 +4,9 @@ import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../../config/env";
 import AppError from "../../errorHelpers/AppError";
 import { QueryBuilder } from "../../utils/QueryBuilder";
-import { userSearchableFields } from "./user.constants";
 import { IAuthProviders, IUser, Role } from "./user.interface";
 import { User } from "./user.model";
+import { userSearchableFields } from "./user.constants";
 
 const createUser = async (payload: Partial<IUser>) => {
     const { email, password, ...rest } = payload;
@@ -19,7 +19,7 @@ const createUser = async (payload: Partial<IUser>) => {
 
     const hashedPassword = await bcryptjs.hash(password as string, Number(envVars.BCRYPT_SALT_ROUND))
 
-    const authProvider: IAuthProviders = { provider: "google", providerId: email as string }
+    const authProvider: IAuthProviders = { provider: "credentials", providerId: email as string }
 
 
     const user = await User.create({
@@ -97,7 +97,13 @@ const getAllUsers = async (query: Record<string, string>) => {
     }
 };
 const getSingleUser = async (id: string) => {
-    const user = await User.findById(id);
+    const user = await User.findById(id).select("-password");
+    return {
+        data: user
+    }
+};
+const getMe = async (userId: string) => {
+    const user = await User.findById(userId).select("-password");
     return {
         data: user
     }
@@ -107,5 +113,6 @@ export const UserServices = {
     createUser,
     getAllUsers,
     getSingleUser,
-    updateUser
+    updateUser,
+    getMe
 }
