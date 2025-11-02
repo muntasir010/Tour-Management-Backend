@@ -1,66 +1,72 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextFunction, Request, Response } from "express";
-import { enVars } from "../config/env";
+import { deleteImageFromCLoudinary } from "../config/cloudinary.config";
+import { envVars } from "../config/env";
 import AppError from "../errorHelpers/AppError";
+import { handleCastError } from "../helpers/handleCastError";import { TErrorSources } from "../interfaces/error.type";
 import { handleDuplicateError } from "../helpers/handleDuplicateError";
-import { handleCastError } from "../helpers/handleCastError";
 import { handleZodError } from "../helpers/handleZodError";
 import { validationError } from "../helpers/validationError";
+;
 
-export const globalErrorHandler = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  err: any,
-  req: Request,
-  res: Response,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  next: NextFunction
-) => {
-  if(enVars.NODE_ENV ==="development"){
-    console.log(err)
-  }
-  let statusCode = 500;
-  let message = `Something Went Wrong ${err.message} !!.`;
-  let errorSources: any = [];
+export const globalErrorHandler = async (err: any, req: Request, res: Response, next: NextFunction) => {
+    if (envVars.NODE_ENV === "development") {
+        console.log(err);
+    }
+    console.log({ file: req.files });
+    if (req.file) {
+        await deleteImageFromCLoudinary(req.file.path)
+    }
 
-  // Duplicate Error
-  if (err.code === 11000) {
-    const simplifiedError = handleDuplicateError(err);
-    statusCode = simplifiedError.statusCode;
-    message = simplifiedError.message;
-  }
-  // ObjectId Error
-  else if (err.name === "CastError") {
-    const simplifiedError = handleCastError(err);
-    statusCode = simplifiedError.statusCode;
-    message = simplifiedError.message;
-  }
-  
-  // Zod Error
-  else if (err.name === "ZodError") {
-    const simplifiedError = handleZodError(err);
-    statusCode = simplifiedError.statusCode;
-    message = simplifiedError.message;
-    errorSources = simplifiedError.errorSources;
-  }
-  // Validation Error
-  else if (err.name === "ValidationError") {
-    const simplifiedError = validationError(err);
-    statusCode = simplifiedError.statusCode;
-    errorSources = simplifiedError.errorSources;
-    message = simplifiedError.message;
-  } else if (err instanceof AppError) {
-    statusCode = err.statusCode;
-    message = err.message;
-  } else if (err instanceof Error) {
-    statusCode = 500;
-    message = err.message;
-  }
+    if (req.files && Array.isArray(req.files) && req.files.length) {
+        const imageUrls = (req.files as Express.Multer.File[]).map(file => file.path)
 
-  res.status(statusCode).json({
-    success: false,
-    message,
-    errorSources,
-    err:enVars.NODE_ENV=== "development"? err:null,
-    stack: enVars.NODE_ENV === "development" ? err.stack : null,
-  });
-};
+        await Promise.all(imageUrls.map(url => deleteImageFromCLoudinary(url)))
+    }
+
+    let errorSources: TErrorSources[] = []
+    let statusCode = 500
+    let message = "Something Went Wrong!!"
+
+    //Duplicate error
+    if (err.code === 11000) {
+        const simplifiedError = handleDuplicateError(err)
+        statusCode = simplifiedError.statusCode;
+        message = simplifiedError.message
+    }
+    // Object ID error / Cast Error
+    else if (err.name === "CastError") {
+        const simplifiedError = handleCastError(err)
+        statusCode = simplifiedError.statusCode;
+        message = simplifiedError.message
+    }
+    else if (err.name === "ZodError") {
+        const simplifiedError = handleZodError(err)
+        statusCode = simplifiedError.statusCode
+        message = simplifiedError.message
+        errorSources = simplifiedError.errorSources as TErrorSources[]
+    }
+    //Mongoose Validation Error
+    else if (err.name === "ValidationError") {
+        const simplifiedError = validationError(err)
+        statusCode = simplifiedError.statusCode;
+        errorSources = simplifiedError.errorSources as TErrorSources[]
+        message = simplifiedError.message
+    }
+    else if (err instanceof AppError) {
+        statusCode = err.statusCode
+        message = err.message
+    } else if (err instanceof Error) {
+        statusCode = 500;
+        message = err.message
+    }
+
+    res.status(statusCode).json({
+        success: false,
+        message,
+        errorSources,
+        err: envVars.NODE_ENV === "development" ? err : null,
+        stack: envVars.NODE_ENV === "development" ? err.stack : null
+    })
+}
