@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import AppError from "../../errorHelpers/AppError";
 import { IAuthProviders, IUser, Role } from "./user.interface";
 import { User } from "./user.model";
