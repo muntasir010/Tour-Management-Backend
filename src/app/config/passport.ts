@@ -6,7 +6,7 @@ import {
   Profile,
   VerifyCallback,
 } from "passport-google-oauth20";
-import { enVars } from "./env";
+import { envVars } from "./env";
 import { User } from "../modules/user/user.model";
 import { Role } from "../modules/user/user.interface";
 import { Strategy as LocalStrategy } from "passport-local";
@@ -27,7 +27,7 @@ passport.use(
         if(!isUserExist){
           return done("User Does Not Exist")
         }
-        const isGoogleAuthenticated = isUserExist.auth.some(providerObjects => providerObjects.provider=="google");
+        const isGoogleAuthenticated = isUserExist.auths.some(providerObjects => providerObjects.provider=="google");
         // if(isGoogleAuthenticated){
         //   return done(null, false, {message: "You have authenticated through Google. So if you want to login Credentials, then at first login with google and set a password for your Gmail and then you can login with email and password."})
         // }
@@ -49,9 +49,9 @@ passport.use(
 passport.use(
   new GoogleStrategy(
     {
-      clientID: enVars.GOOGLE_CLIENT_ID,
-      clientSecret: enVars.GOOGLE_CLIENT_SECRET,
-      callbackURL: enVars.GOOGLE_CALLBACK_URL,
+      clientID: envVars.GOOGLE_CLIENT_ID,
+      clientSecret: envVars.GOOGLE_CLIENT_SECRET,
+      callbackURL: envVars.GOOGLE_CALLBACK_URL,
     },
     async (
       accessToken: string,

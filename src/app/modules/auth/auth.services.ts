@@ -8,7 +8,7 @@ import { envVars } from "../../config/env";
 import AppError from "../../errorHelpers/AppError";
 import { sendEmail } from "../../utils/sendEmail";
 import { createNewAccessTokenWithRefreshToken } from "../../utils/userTokens";
-import { IAuthProviders, IsActive } from "../user/user.interface";
+import { IAuthProvider, IsActive } from "../user/user.interface";
 import { User } from "../user/user.model";
 
 const getNewAccessToken = async (refreshToken: string) => {
@@ -96,12 +96,12 @@ const setPassword = async (userId: string, plainPassword: string) => {
         Number(envVars.BCRYPT_SALT_ROUND)
     )
 
-    const credentialProvider: IAuthProviders = {
+    const credentialProvider: IAuthProvider = {
         provider: "credentials",
         providerId: user.email
     }
 
-    const auths: IAuthProviders[] = [...user.auths, credentialProvider]
+    const auths: IAuthProvider[] = [...user.auths, credentialProvider]
 
     user.password = hashedPassword
 
