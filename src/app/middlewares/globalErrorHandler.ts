@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextFunction, Request, Response } from "express";
 import { enVars } from "../config/env";
@@ -35,6 +34,7 @@ export const globalErrorHandler = (
     statusCode = simplifiedError.statusCode;
     message = simplifiedError.message;
   }
+  
   // Zod Error
   else if (err.name === "ZodError") {
     const simplifiedError = handleZodError(err);

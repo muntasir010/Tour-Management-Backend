@@ -15,7 +15,7 @@ export const validationError = (
   );
   return {
     statusCode: 400,
-    message: "Validation Error",
     errorSources,
+    message: "Validation Error",
   };
 };
